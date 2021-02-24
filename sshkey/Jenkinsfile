@@ -1,0 +1,32 @@
+pipeline {
+
+    agent { label 'docker-compile' }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+    }
+
+    environment {
+        SSHPublicKey = credentials('funops')
+    }
+
+    stages {
+        stage('CHECK') {
+            steps {
+                dir('sshkey') {
+                    script {
+                        sh '''
+                            DOCKER_BUILDKIT=1 docker build --no-cache --secret id=SSHPublicKey,src=${SSHPublicKey} --progress=plain -f Dockerfile -t foo-buildkit .
+                        '''
+                    }
+                }
+            }
+        }
+    }
+    post {
+        cleanup{
+            cleanWs()
+        }
+    }
+
+}

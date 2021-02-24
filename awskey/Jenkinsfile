@@ -1,0 +1,37 @@
+pipeline {
+
+    agent {
+        label 'docker-compile'
+    }
+
+    // environment {
+    // }
+
+    stages {
+        stage('CHECK') {
+            steps {
+                dir("debug") {
+                    withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding',
+                            credentialsId: 'AWS_S3_Jenkins_Backup',
+                            accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                            secretKeyVariable: 'AWS_SECRET_ACCESS_KEY', ]]) {
+                        script {
+                            sh script: '''
+                                docker build -t demo --build-arg AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" --build-arg AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" -f Dockerfile .
+                                docker rmi demo
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    post {
+        cleanup{
+            cleanWs()
+        }
+    }
+
+}
